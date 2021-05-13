@@ -34,26 +34,22 @@ def prepdata(crlist, nrepeat=100):
                 
     return sampleddata
 
-def sample(model, cond, nrepeat=1000):
-    cond_multiple = np.repeat(cond, nrepeat, axis=0)
-    srout = np.power(10.0, model.predict(cond_multiple))*10000.0
-    #srout = model.predict(cond_multiple)
-    av = np.average(srout)
-    std = np.std(srout)    
-    return av, std
-
-def samplegrid(model, hist):
-    xbin = np.linspace(0, 1, hist.shape[0])
-    ybin = np.linspace(0, 1, hist.shape[1])
+def samplegrid(model, htpt, nrepeat=1000):
+    shape = htpt.shape
+    xbin = np.linspace(0, 1, shape[0])
+    ybin = np.linspace(0, 1, shape[1])
     
-    grid = np.zeros(hist.shape)
-    grid_std = np.zeros(hist.shape)
+    xx, yy = np.meshgrid(xbin, ybin, indexing='ij')
     
-    for i in range(hist.shape[0]):
-        for j in range(hist.shape[1]):
-            grid[i,j], grid_std[i,j] = sample(model, [[xbin[i], ybin[j]]])
+    cond = np.array([xx.flatten(), yy.flatten()]).T
             
-    return grid, grid_std
+    cond_multiple = np.repeat(cond, nrepeat, axis=0)
+    srout = (np.power(10.0, model.predict(cond_multiple))*10000.0).reshape((-1, nrepeat))
+    
+    srout_mean = np.average(srout, axis=1).reshape(shape)
+    srout_std = np.std(srout, axis=1).reshape(shape)
+    
+    return srout_mean, srout_std
 
 def testABCDrate(crlist):
   
